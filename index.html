@@ -104,12 +104,6 @@ input[type=file]{font-size:12.5px;color:var(--muted)}
   <div style="border-left:3px solid var(--hit);background:color-mix(in srgb,var(--hit) 9%,transparent);padding:9px 13px;border-radius:0 3px 3px 0;font-size:12.5px;margin-top:12px" id="bilanNote"></div>
 </div>
 
-<div class="card">
-  <p class="tag">Arbre des espèces</p>
-  <p class="note" style="margin:-2px 0 10px">Regroupement des lignées de référence par <b>distance génétique</b> (distance standard de Nei, sur les fréquences alléliques ; regroupement UPGMA) — une vue d'ensemble complémentaire au test d'hybridation. Chaque testé est rattaché à la lignée sous laquelle il est le plus vraisemblable ; le nombre entre parenthèses indique combien de testés y sont rattachés.</p>
-  <svg id="svgTree" viewBox="0 0 700 300"></svg>
-</div>
-
 <footer id="foot"></footer>
 </div>
 <script>
@@ -221,7 +215,7 @@ function render(){
   var An=$("spA").value,Bn=$("spB").value,n=+$("n").value;
   $("hA").textContent='Référence : '+An;$("cA").textContent='vraisemblances sous les fréquences de '+An;
   $("hB").textContent='Référence : '+Bn;$("cB").textContent='vraisemblances sous les fréquences de '+Bn;
-  draw('svgA',An);draw('svgB',Bn);renderPortraits();renderBilan(n);renderTree();
+  draw('svgA',An);draw('svgB',Bn);renderPortraits();renderBilan(n);
   $("legend").innerHTML='<span><i class="sw" style="border-color:var(--A)"></i> '+An+' (A)</span><span><i class="sw" style="border-color:var(--B)"></i> '+Bn+' (B)</span><span><i class="sw" style="border-image:linear-gradient(90deg,hsl(170,62%,52%),hsl(290,62%,52%)) 1;border-color:hsl(230,62%,52%)"></i> testés — une courbe/itération</span><span><i class="sw" style="border-color:var(--ink);border-top-style:dashed"></i> moyenne</span>';
   $("foot").innerHTML='Méthode : vraisemblance multilocus « à la Paetkau » (1995) + leave-one-out + plancher 1/(2N+1), log\u2081\u2080 — reproduit les classifications de FLOCK. '+
     'Données : cinq lignées de référence (MOHU '+DATA.refs.MOHU.length+', MOVA '+DATA.refs.MOVA.length+', MOCA '+DATA.refs.MOCA.length+', MOMA '+DATA.refs.MOMA.length+', MOAN '+DATA.refs.MOAN.length+') et '+DATA.tested.length+' testés (multi-allèles reconstitués), 10 locus. MOHU-REC1/2/3 sont trois sous-échantillons aléatoires fixes de 50 génotypes MOHU, pour vérifier la robustesse à la taille d\'échantillon. Calcul entièrement dans le navigateur.';
