@@ -52,7 +52,7 @@ input[type=file]{font-size:12.5px;color:var(--muted)}
 <div class="wrap">
 <header>
   <h1>Test d'hybridation en présence de génotypes multiploïdes</h1>
-  <p class="sub">Chevaliers (catostomidés) — vraisemblances des testés sous deux lignées parentales</p>
+  <p class="sub">Vraisemblances des testés sous deux lignées parentales de référence</p>
   <p class="sub" id="stamp"></p>
 </header>
 
@@ -218,7 +218,7 @@ function render(){
   draw('svgA',An);draw('svgB',Bn);renderPortraits();renderBilan(n);
   $("legend").innerHTML='<span><i class="sw" style="border-color:var(--A)"></i> '+An+' (A)</span><span><i class="sw" style="border-color:var(--B)"></i> '+Bn+' (B)</span><span><i class="sw" style="border-image:linear-gradient(90deg,hsl(170,62%,52%),hsl(290,62%,52%)) 1;border-color:hsl(230,62%,52%)"></i> testés — une courbe/itération</span><span><i class="sw" style="border-color:var(--ink);border-top-style:dashed"></i> moyenne</span>';
   $("foot").innerHTML='Méthode : vraisemblance multilocus « à la Paetkau » (1995) + leave-one-out + plancher 1/(2N+1), log\u2081\u2080 — reproduit les classifications de FLOCK. '+
-    'Données : cinq lignées de référence (MOHU '+DATA.refs.MOHU.length+', MOVA '+DATA.refs.MOVA.length+', MOCA '+DATA.refs.MOCA.length+', MOMA '+DATA.refs.MOMA.length+', MOAN '+DATA.refs.MOAN.length+') et '+DATA.tested.length+' testés (multi-allèles reconstitués), 10 locus. MOHU-REC1/2/3 sont trois sous-échantillons aléatoires fixes de 50 génotypes MOHU, pour vérifier la robustesse à la taille d\'échantillon. Calcul entièrement dans le navigateur.';
+    'Données : '+SP.length+' lignée'+(SP.length>1?'s':'')+' de référence ('+SP.map(function(n){return n+' '+DATA.refs[n].length;}).join(', ')+') et '+DATA.tested.length+' testés, '+L+' locus.'+(SP.some(function(n){return /-REC\d+$/i.test(n);})?' Les entrées «\u00a0-REC\u00a0» sont des sous-échantillons aléatoires fixes, pour vérifier la robustesse à la taille d\'échantillon.':'')+' Calcul entièrement dans le navigateur.';
 }
 // ---------- Arbre des espèces (distance de Nei + UPGMA) ----------
 function alleleFreq(sample){var per=fullCounts(sample);return per.map(function(o){var f={};for(var a in o.c)f[a]=o.c[a]/o.k;return {f:f,k:o.k};});}
