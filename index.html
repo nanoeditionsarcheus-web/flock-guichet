@@ -220,61 +220,6 @@ function render(){
   $("foot").innerHTML='Méthode : vraisemblance multilocus « à la Paetkau » (1995) + leave-one-out + plancher 1/(2N+1), log\u2081\u2080 — reproduit les classifications de FLOCK. '+
     'Données : '+SP.length+' lignée'+(SP.length>1?'s':'')+' de référence ('+SP.map(function(n){return n+' '+DATA.refs[n].length;}).join(', ')+') et '+DATA.tested.length+' testés, '+L+' locus.'+(SP.some(function(n){return /-REC\d+$/i.test(n);})?' Les entrées «\u00a0-REC\u00a0» sont des sous-échantillons aléatoires fixes, pour vérifier la robustesse à la taille d\'échantillon.':'')+' Calcul entièrement dans le navigateur.';
 }
-// ---------- Arbre des espèces (distance de Nei + UPGMA) ----------
-function alleleFreq(sample){var per=fullCounts(sample);return per.map(function(o){var f={};for(var a in o.c)f[a]=o.c[a]/o.k;return {f:f,k:o.k};});}
-function neiD(fx,fy){
-  var Jxy=0,Jx=0,Jy=0,nl=0;
-  for(var li=0;li<fx.length;li++){if(fx[li].k<=0||fy[li].k<=0)continue;var sxy=0,sx=0,sy=0,al={};
-    for(var a in fx[li].f)al[a]=1;for(var a in fy[li].f)al[a]=1;
-    for(var a in al){var px=fx[li].f[a]||0,py=fy[li].f[a]||0;sxy+=px*py;sx+=px*px;sy+=py*py;}
-    Jxy+=sxy;Jx+=sx;Jy+=sy;nl++;}
-  if(!nl)return 3;var I=(Jxy/nl)/Math.sqrt((Jx/nl)*(Jy/nl));return I>0?-Math.log(I):3;
-}
-function upgma(names,D){
-  var active=names.map(function(n,i){return {leaf:n,size:1,id:i,h:0};}),dist={},nid=names.length;
-  for(var i=0;i<names.length;i++){dist[i]={};for(var j=0;j<names.length;j++)dist[i][j]=D[i][j];}
-  while(active.length>1){var mi=0,mj=1,md=Infinity;
-    for(var a=0;a<active.length;a++)for(var b=a+1;b<active.length;b++){var d=dist[active[a].id][active[b].id];if(d<md){md=d;mi=a;mj=b;}}
-    var ca=active[mi],cb=active[mj],node={left:ca,right:cb,size:ca.size+cb.size,id:nid++,h:md/2};
-    dist[node.id]={};active.forEach(function(ck){if(ck===ca||ck===cb)return;var d=(dist[ca.id][ck.id]*ca.size+dist[cb.id][ck.id]*cb.size)/node.size;dist[node.id][ck.id]=d;dist[ck.id][node.id]=d;});
-    active=active.filter(function(c){return c!==ca&&c!==cb;});active.push(node);}
-  return active[0];
-}
-function assignCounts(treeSp,n){
-  var per={};treeSp.forEach(function(sp){per[sp]=fullCounts(DATA.refs[sp]);});
-  var counts={};treeSp.forEach(function(sp){counts[sp]=0;});
-  DATA.tested.forEach(function(t){var best=treeSp[0],bl=-Infinity;treeSp.forEach(function(sp){var s=0;for(var it=0;it<n;it++)s+=loglik(testedIterGeno(t),per[sp]);var m=s/n;if(m>bl){bl=m;best=sp;}});counts[best]++;});
-  return counts;
-}
-function renderTree(){
-  var treeSp=SP.filter(function(s){return !/-REC\d+$/i.test(s);});
-  var svg=$("svgTree");
-  if(treeSp.length<2){svg.innerHTML='<text x="20" y="30" font-size="12" fill="var(--muted)">Au moins deux lignées de référence sont nécessaires.</text>';return;}
-  var freqs=treeSp.map(function(sp){return alleleFreq(DATA.refs[sp]);});
-  var Dm=treeSp.map(function(_,i){return treeSp.map(function(_,j){return i===j?0:neiD(freqs[i],freqs[j]);});});
-  var root=upgma(treeSp,Dm);
-  var counts=assignCounts(treeSp,+$("n").value);
-  var leaves=[];(function col(nd){if(nd.leaf!==undefined)leaves.push(nd);else{col(nd.left);col(nd.right);}})(root);
-  leaves.forEach(function(l,i){l.x=i;});
-  (function sx(nd){if(nd.leaf!==undefined)return nd.x;nd.x=(sx(nd.left)+sx(nd.right))/2;return nd.x;})(root);
-  var W=700,H=300,mL=20,mR=20,mT=20,mB=64,maxH=root.h||1,plotH=H-mT-mB;
-  var stepX=(W-mL-mR)/Math.max(1,leaves.length-1||1);
-  function PX(nd){return leaves.length===1?(mL+(W-mL-mR)/2):(mL+nd.x*stepX);}
-  function PY(nd){return (H-mB)-(nd.h/maxH)*plotH;}
-  var s='';
-  s+='<line x1="'+mL+'" y1="'+mT+'" x2="'+mL+'" y2="'+(H-mB)+'" stroke="var(--grid)"/>';
-  for(var g=0;g<=3;g++){var hv=maxH*g/3,y=(H-mB)-(hv/maxH)*plotH;s+='<text x="'+(mL-4)+'" y="'+(y+3)+'" text-anchor="end" font-size="8" fill="var(--muted)" font-family="var(--mono)">'+hv.toFixed(2)+'</text>';}
-  s+='<text transform="translate(9,'+((mT+H-mB)/2)+') rotate(-90)" text-anchor="middle" font-size="9" fill="var(--muted)">distance de Nei</text>';
-  (function draw(nd){if(nd.leaf!==undefined)return;var yN=PY(nd),xl=PX(nd.left),xr=PX(nd.right),yl=PY(nd.left),yr=PY(nd.right);
-    s+='<line x1="'+xl.toFixed(1)+'" y1="'+yl.toFixed(1)+'" x2="'+xl.toFixed(1)+'" y2="'+yN.toFixed(1)+'" stroke="var(--ink)" stroke-width="1.6"/>';
-    s+='<line x1="'+xr.toFixed(1)+'" y1="'+yr.toFixed(1)+'" x2="'+xr.toFixed(1)+'" y2="'+yN.toFixed(1)+'" stroke="var(--ink)" stroke-width="1.6"/>';
-    s+='<line x1="'+xl.toFixed(1)+'" y1="'+yN.toFixed(1)+'" x2="'+xr.toFixed(1)+'" y2="'+yN.toFixed(1)+'" stroke="var(--ink)" stroke-width="1.6"/>';
-    draw(nd.left);draw(nd.right);})(root);
-  leaves.forEach(function(l){var x=PX(l),y=H-mB;s+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="3" fill="var(--A)"/>';
-    s+='<text x="'+x.toFixed(1)+'" y="'+(y+18)+'" text-anchor="middle" font-size="12" font-family="var(--serif)" fill="var(--ink)">'+l.leaf+'</text>';
-    s+='<text x="'+x.toFixed(1)+'" y="'+(y+33)+'" text-anchor="middle" font-size="10" font-family="var(--mono)" fill="var(--muted)">(n='+counts[l.leaf]+')</text>';});
-  svg.innerHTML=s;
-}
 function normA(v){ if(v===null||v===undefined) return null; if(typeof v==='number')v=Math.round(v); var s=String(v).trim(); if(s===''||/^0+$/.test(s)||s==='0.0')return null; var n=parseInt(s,10); return isNaN(n)?null:n; }
 function readFile(file){
   return new Promise(function(res,rej){
