@@ -24,9 +24,8 @@ select#spA{border-color:var(--A)}select#spB{border-color:var(--B)}
 input[type=range]{width:150px}.nval{font-family:var(--mono);font-weight:700;color:var(--A);min-width:2ch}
 .note{color:var(--muted);font-size:13px}h2{font-family:var(--serif);font-weight:400;font-size:18px;margin:0 0 2px}
 .reading{border-left:3px solid var(--A);background:color-mix(in srgb,var(--A) 8%,transparent);padding:10px 14px;border-radius:0 3px 3px 0;font-size:13.5px;margin-top:8px}
-.gate{border-left:4px solid var(--hit);background:color-mix(in srgb,var(--hit) 10%,transparent);padding:12px 15px;border-radius:0 3px 3px 0;font-size:13.5px;margin:0 0 14px}
-.gate.no{border-left-color:var(--warn);background:color-mix(in srgb,var(--warn) 9%,transparent)}
-.gate b{font-weight:600}.gate .verdict{font-family:var(--serif);font-size:16px;display:block;margin-bottom:4px}
+.ask{font-size:14px;margin:0 0 8px}.choices{display:flex;gap:18px;font-size:14px}.choices label{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.stop{border-left:3px solid var(--warn);background:color-mix(in srgb,var(--warn) 9%,transparent);padding:9px 13px;border-radius:0 3px 3px 0;font-size:13px;margin:12px 0 0}
 .panels{display:grid;grid-template-columns:1fr 1fr;gap:18px}@media(max-width:760px){.panels{grid-template-columns:1fr}}
 .panel .cap{color:var(--muted);font-size:12.5px;margin:0 0 8px}svg{width:100%;height:auto;display:block;overflow:visible}
 .legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:8px;font-size:12.5px;color:var(--muted)}.legend span{display:inline-flex;align-items:center;gap:6px}.sw{width:22px;height:0;border-top-width:3px;border-top-style:solid;display:inline-block}
@@ -36,9 +35,10 @@ table{width:100%;border-collapse:collapse;font-size:12px}th,td{padding:3px 6px 3
 thead th{font-family:var(--mono);font-size:9.5px;letter-spacing:.03em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--axis)}td.z{color:var(--muted)}
 .bilan-cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:6px}@media(max-width:760px){.bilan-cols{grid-template-columns:1fr}}
 .bilan-cols h3{font-family:var(--serif);font-weight:400;font-size:15px;margin:0 0 4px}
-.chip{display:inline-block;font-family:var(--mono);font-size:12px;background:var(--grid);border-radius:3px;padding:2px 7px;margin:2px 4px 2px 0}
-.chip.both{background:color-mix(in srgb,var(--hit) 22%,transparent);color:var(--ink);font-weight:600}
-.thr{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin:2px 0 4px}.dim{opacity:.5}
+.chip{display:inline-block;font-family:var(--mono);font-size:12px;font-weight:700;color:var(--ink);background:var(--grid);border-radius:3px;padding:2px 7px;margin:2px 4px 2px 0}
+.chip.both{color:var(--hit);box-shadow:inset 0 0 0 1px var(--hit)}
+.fmt{display:flex;flex-wrap:wrap;gap:6px 20px;align-items:center;font-size:12.5px;color:var(--muted);margin-top:12px;padding-top:10px;border-top:1px solid var(--grid)}
+.thr{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin:2px 0 4px}
 footer{color:var(--muted);font-size:12px;margin-top:26px;border-top:1px solid var(--rule);padding-top:12px}
 button{font-family:var(--sans);font-size:13.5px;font-weight:600;background:var(--ink);color:#fff;border:0;border-radius:3px;padding:7px 14px;cursor:pointer}
 button:hover{filter:brightness(1.12)}
@@ -73,7 +73,6 @@ input[type=file]{font-size:12.5px;color:var(--muted)}
     <label>Lignée A : <select id="spA"></select></label>
     <label>Lignée B : <select id="spB"></select></label>
     <label>Itérations : <input type="range" id="n" min="1" max="20" value="10"><span class="nval" id="nval">10</span></label>
-    <label>Centile (stringence) : <input type="range" id="pct" min="0" max="40" value="5"><span class="nval" id="pctval">5</span></label>
     <label style="gap:6px"><input type="checkbox" id="showMean" checked> moyenne</label>
   </div>
   <div class="reading">Chaque graphe prend <b>une lignée parentale comme référence</b> et classe les log-vraisemblances en ordre croissant. Un <b>hybride</b> de A et B se place <b>entre</b> les deux courbes parentales, dans les deux graphes. Un locus à 3-4 allèles donne <b>une courbe par itération</b>.</div>
@@ -93,15 +92,23 @@ input[type=file]{font-size:12.5px;color:var(--muted)}
 
 <div class="card">
   <p class="tag">Étape 1 — Y a-t-il un signal d'hybridation ?</p>
-  <div id="gate"></div>
-  <p class="note" style="margin:4px 0 0">Les courbes montrent-elles la présence probable d'hybrides ? <b>Oui</b> → le pointage des candidats (étape 2) est pertinent. <b>Non</b> → le pointage n'est pas utile et pourrait produire des faux positifs; l'analyse devrait s'arrêter ici.</p>
+  <p class="ask">Les courbes montrent-elles la présence probable d'hybrides ?</p>
+  <div class="choices" role="radiogroup" aria-label="Présence probable d'hybrides">
+    <label><input type="radio" name="signal" id="sigYes" value="oui"> Oui</label>
+    <label><input type="radio" name="signal" id="sigNo" value="non"> Non</label>
+  </div>
+  <p class="stop" id="stopMsg" hidden>Analyse arrêtée : sans signal d'hybridation dans les courbes, le pointage des candidats n'est pas pertinent et pourrait produire des faux positifs.</p>
 </div>
 
-<div class="card">
+<div class="card" id="step2" hidden>
   <p class="tag">Étape 2 — Candidats-hybrides (critère par centiles)</p>
-  <p class="note" id="pctExpl" style="margin:-2px 0 10px"></p>
+  <p class="note" id="pctRule" style="margin:-2px 0 12px"></p>
+  <p class="note" style="margin:0 0 6px">À <b>0</b> : min/max (le plus strict, sensible aux génotypes singuliers). Monter le centile élargit l'intervalle et retient plus de candidats ; une <b>hausse brutale</b> du nombre à un certain niveau trahit l'effet d'outliers parentaux. Valeur suggérée : <b>5</b>.</p>
+  <div class="controls" style="margin-bottom:14px">
+    <label>Centile (stringence) : <input type="range" id="pct" min="0" max="40" value="5"><span class="nval" id="pctval">5</span></label>
+  </div>
   <div class="bilan-cols" id="bilan"></div>
-  <div style="border-left:3px solid var(--hit);background:color-mix(in srgb,var(--hit) 9%,transparent);padding:9px 13px;border-radius:0 3px 3px 0;font-size:12.5px;margin-top:12px" id="bilanNote"></div>
+  <div class="fmt"><span><span class="chip">ID</span> gras, couleur normale : candidat retenu pour cette référence seulement</span><span><span class="chip both">ID</span> gras en vert : candidat retenu pour les deux références</span></div>
 </div>
 
 <footer id="foot"></footer>
@@ -152,41 +159,12 @@ function ploidyTable(name,sample,tst){var lv={};for(var s=0;s<sample.length;s++)
   pr.forEach(function(p){h+='<tr><td>'+(nm[p]||p)+'</td>';for(var li=0;li<L;li++){var v=(lv[p]&&lv[p][li])||0;h+='<td'+(v===0?' class="z"':'')+'>'+v+'</td>';}h+='</tr>';});return h+'</tbody></table></div>';}
 function renderPortraits(){var A=$("spA").value,B=$("spB").value;$("portraits").innerHTML=ploidyTable(A,DATA.refs[A],false)+ploidyTable(B,DATA.refs[B],false)+ploidyTable("Testés",DATA.tested,true);}
 
-// position du nuage testé entre les deux parents, sous une référence
-function positions(n){
-  var An=$("spA").value,Bn=$("spB").value;
-  function pos(refName){
-    var refLiks=groupLiks(DATA.refs[refName],DATA.refs[refName],true);
-    var A=DATA.refs[$("spA").value],B=DATA.refs[$("spB").value];
-    var high=median(groupLiks(refName===An?A:B,DATA.refs[refName],true)); // parent de référence
-    var low =median(groupLiks(refName===An?B:A,DATA.refs[refName],false));// autre parent
-    var t=median(testedMeans(DATA.refs[refName],n));
-    return (t-low)/((high-low)||1);
-  }
-  return {A:pos(An),B:pos(Bn)};
-}
-function renderGate(n){
-  var An=$("spA").value,Bn=$("spB").value,p=positions(n);
-  // testés ≈ A : posA haut & posB bas ; ≈ B : posA bas & posB haut ; entre : deux au milieu
-  var mid=function(x){return x>0.30&&x<0.70;};
-  var like=null;
-  if(p.A>0.70&&p.B<0.30) like=An; else if(p.A<0.30&&p.B>0.70) like=Bn;
-  var signal = mid(p.A)&&mid(p.B);
-  var el=$("gate"),html;
-  if(like){ el.className='gate no';
-    html='<span class="verdict">Pas de signal net d\'hybridation.</span>Dans les deux graphes, le nuage des testés suit la lignée <b>'+like+'</b> plutôt que de se placer entre les deux. Le groupe testé ressemble à '+like+' — le pointage de candidats (étape 2) risque de ne produire que des <b>faux positifs</b>.';
-  } else if(signal){ el.className='gate';
-    html='<span class="verdict">Signal d\'hybridation possible.</span>Le nuage des testés se place <b>entre</b> les deux lignées dans les deux graphes. Le pointage des candidats (étape 2) est pertinent.';
-  } else { el.className='gate';
-    html='<span class="verdict">Signal mitigé.</span>Le nuage des testés n\'est ni clairement sur une lignée ni franchement au milieu (position ≈ '+p.A.toFixed(2)+' / '+p.B.toFixed(2)+' entre B et A). Examinez les graphes avant de conclure.';
-  }
-  el.innerHTML=html;
-  return !like; // true si un pointage a du sens
-}
-
 function renderBilan(n){
-  var P=+$("pct").value, worth=renderGate(n);
-  $("pctExpl").innerHTML='Un testé est retenu si la <b>moyenne</b> de ses vraisemblances tombe au-dessus du centile '+(100-P)+'ᵉ de l\'autre lignée et sous le centile '+P+'ᵉ de la lignée de référence. À <b>0</b> : min/max (le plus strict, sensible aux génotypes singuliers). Monter le centile élargit l\'intervalle et retient plus de candidats — une <b>hausse brutale</b> du nombre à un certain niveau trahit l\'effet d\'outliers parentaux. Valeur suggérée : <b>5</b>.';
+  var P=+$("pct").value;
+  var ord=function(k){return k+(k===1?'ᵉʳ':'ᵉ');};
+  $("pctRule").innerHTML='Un testé est retenu si la <b>moyenne</b> de ses vraisemblances tombe '+(P===0?
+    'au-dessus du <b>maximum</b> de l\'autre lignée et sous le <b>minimum</b> de la lignée de référence.':
+    'au-dessus du centile <b>'+ord(100-P)+'</b> de l\'autre lignée et sous le centile <b>'+ord(P)+'</b> de la lignée de référence.');
   var An=$("spA").value,Bn=$("spB").value,out={};
   [['A',An,Bn],['B',Bn,An]].forEach(function(t){
     var refN=t[1],othN=t[2];
@@ -203,12 +181,15 @@ function renderBilan(n){
     else if(!r.flag.length)h+='<p class="note">aucun candidat</p>';
     else h+=r.flag.map(function(x){return '<span class="chip'+(inter.indexOf(x)>=0?' both':'')+'">'+x+'</span>';}).join('');
     return h+'</div>';}
-  var b=$("bilan");b.className='bilan-cols'+(worth?'':' dim');
-  b.innerHTML=col(out.A)+col(out.B);
-  $("bilanNote").innerHTML=(worth?'':'<b>Rappel :</b> l\'étape 1 ne montre pas de signal d\'hybridation — les candidats ci-dessous sont vraisemblablement des faux positifs. ')+
-    'Candidats signalés sous les <b>deux</b> références (en vert) : <b>'+(inter.length?inter.join(', '):'aucun')+'</b>.';
+  $("bilan").innerHTML=col(out.A)+col(out.B);
 }
 
+// Étape 1 : la réponse de l'usagère décide de l'affichage de l'étape 2
+function applyAnswer(){
+  var yes=$("sigYes").checked,no=$("sigNo").checked;
+  $("step2").hidden=!yes;$("stopMsg").hidden=!no;
+}
+function resetAnswer(){$("sigYes").checked=false;$("sigNo").checked=false;applyAnswer();}
 function render(){
   $("nval").textContent=$("n").value;$("pctval").textContent=$("pct").value;
   var d=new Date();$("stamp").textContent='Exécuté le '+d.toLocaleDateString('fr-CA')+' à '+d.toLocaleTimeString('fr-CA');
@@ -324,7 +305,7 @@ function status(msg,err){var el=$("upStatus");el.textContent=msg;el.className='n
 
 function applyData(newDATA,defA,defB){
   DATA=newDATA;SP=Object.keys(DATA.refs);LOCI=DATA.loci;L=LOCI.length;
-  var a=$("spA"),b=$("spB");a.innerHTML='';b.innerHTML='';
+  var a=$("spA"),b=$("spB");a.innerHTML='';b.innerHTML='';resetAnswer();
   SP.forEach(function(sp){a.add(new Option(sp,sp));b.add(new Option(sp,sp));});
   a.value=(defA&&SP.indexOf(defA)>=0)?defA:SP[0];
   b.value=(defB&&SP.indexOf(defB)>=0)?defB:(SP.filter(function(x){return x!==a.value;})[0]||SP[0]);
@@ -357,8 +338,9 @@ function wireUploader(){
 }
 
 (function init(){
-  $("spA").addEventListener('change',function(){var a=$("spA"),b=$("spB");if(b.value===a.value)b.value=SP.filter(function(x){return x!==a.value;})[0];render();});
-  $("spB").addEventListener('change',function(){var a=$("spA"),b=$("spB");if(a.value===b.value)a.value=SP.filter(function(x){return x!==b.value;})[0];render();});
+  $("spA").addEventListener('change',function(){var a=$("spA"),b=$("spB");if(b.value===a.value)b.value=SP.filter(function(x){return x!==a.value;})[0];resetAnswer();render();});
+  $("spB").addEventListener('change',function(){var a=$("spA"),b=$("spB");if(a.value===b.value)a.value=SP.filter(function(x){return x!==b.value;})[0];resetAnswer();render();});
+  ['sigYes','sigNo'].forEach(function(id){$(id).addEventListener('change',applyAnswer);});
   ['n','pct'].forEach(function(id){$(id).addEventListener('input',render);});$("showMean").addEventListener('change',render);
   wireUploader();
   applyData(DEFAULT_DATA,"MOHU","MOVA");
